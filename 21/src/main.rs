@@ -18,7 +18,7 @@ impl Dice {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Player {
     space: usize,
     score: usize
@@ -55,22 +55,25 @@ fn part_1(player_1_space: usize, player_2_space: usize) -> usize {
 }
 
 // generated with list(itertools.product([1,2,3], [1,2,3], [1,2,3]))
-const dice_roll_table: [usize; 27] = [3, 4, 5, 4, 5, 6, 5, 6, 7, 4, 5, 6, 5, 6, 7, 6, 7, 8, 5, 6, 7, 6, 7, 8, 7, 8, 9];
+// then deduplicated by hand lmao
+
+const DICE_ROLL_TABLE: [(usize, usize); 7] = [(3, 1), (4,3), (5,6), (6,7), (7,6), (8, 3), (9, 1)];
 fn dirac_player_1(player_1: Player, player_2: Player, print: bool) -> (usize, usize) {
     let mut new_wins: (usize, usize) = (0, 0);
 
-    for dice in dice_roll_table {
+    for (dice, mult) in DICE_ROLL_TABLE {
         let mut player_1 = player_1.clone();
+
         player_1.step(dice);
         if player_1.score >= 21 {
-            new_wins.0 += 1;
+            new_wins.0 += mult;
         } else {
             let future_wins = dirac_player_2(player_1, player_2.clone(), false);
             if print {
                 println!("{:?}", future_wins);
             }
-            new_wins.0 += future_wins.0;
-            new_wins.1 += future_wins.1;
+            new_wins.0 += future_wins.0 * mult;
+            new_wins.1 += future_wins.1 * mult;
         }
     }
 
@@ -80,16 +83,20 @@ fn dirac_player_1(player_1: Player, player_2: Player, print: bool) -> (usize, us
 fn dirac_player_2(player_1: Player, player_2: Player, print: bool) -> (usize, usize) {
     let mut new_wins: (usize, usize) = (0, 0);
 
-    for dice in dice_roll_table {
+    for (dice, mult) in DICE_ROLL_TABLE {
         let mut player_2 = player_2.clone();
 
         player_2.step(dice);
         if player_2.score >= 21 {
-            new_wins.1 += 1;
+            new_wins.1 += mult;
         } else {
             let future_wins = dirac_player_1(player_1.clone(), player_2, false);
-            new_wins.0 += future_wins.0;
-            new_wins.1 += future_wins.1;
+            new_wins.0 += future_wins.0 * mult;
+            new_wins.1 += future_wins.1 * mult;
+
+            if print {
+                println!("{:?}", future_wins);
+            }
         }
     }
 
@@ -97,14 +104,12 @@ fn dirac_player_2(player_1: Player, player_2: Player, print: bool) -> (usize, us
 }
 
 fn part_2(player_1_space: usize, player_2_space: usize) -> usize {
-    // do it
     let player_1 = Player { space: player_1_space, score: 0 };
     let player_2 = Player { space: player_2_space, score: 0 };
 
     let (player_1_results, player_2_results) = dirac_player_1(player_1, player_2, true);
-    0
 
-    //[player_1.score, player_2.score].iter().min().unwrap() * dice.rolls
+    *[player_1_results, player_2_results].iter().max().unwrap()
 }
 
 
@@ -116,4 +121,5 @@ fn test() {
 
 fn main() {
     println!("Part 1: {:?}", part_1(10, 4));
+    println!("Part 2: {:?}", part_2(10, 4));
 }
